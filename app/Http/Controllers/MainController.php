@@ -2,7 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Order;
 use Illuminate\Http\Request;
+use Throwable;
+use Exception;
+use Illuminate\Support\Facades\DB;
 
 class MainController extends Controller
 {
@@ -10,5 +14,87 @@ class MainController extends Controller
     {
         $title = "خانه";
         return view('main.home',compact('title'));
+    }
+
+    public function newOrder(Request $request)
+    {
+        $cardNumber = $request->input('card_number');
+        $validate = $cardNumber && strlen($cardNumber) == 16;
+        if (!$validate) { return $this->jsonMessage(false,'شماره کارت نامعتبر است!',null); }
+        
+        DB::beginTransaction();
+        try {
+            $orderAmount = 5000;
+            $order = Order::query()->create([
+                'card_number' => $cardNumber,
+                'amount' => $orderAmount,
+                'created_at' => now()->toDateTimeString(),
+            ]);
+            $orderId = $order->id;
+
+            $paymentApiGatewayId = config('custom.paystar_gateway_id');
+            $paymentApiHmacKey = config('custom.paystar_hmac_key');
+            $validate = $paymentApiGatewayId && $paymentApiHmacKey;
+            if (!$validate) { throw new Exception; }
+
+            $paymentApiCallback = route('main.callback');
+            $payload = $orderAmount . '#' . $orderId . '#' . $paymentApiCallback;
+            $paymentApiSign = hash_hmac('sha512',$payload,$paymentApiHmacKey);
+
+            $paymentApiData = [
+                'amount' => $orderAmount,
+                'order_id' => (string) $orderId,
+                'callback' => $paymentApiCallback,
+                'sign' => $paymentApiSign,
+            ];
+
+            $handle = curl_init('https://core.paystar.ir/api/pardakht/create');
+            curl_setopt($handle,CURLOPT_CUSTOMREQUEST,'POST');
+            curl_setopt($handle,CURLOPT_HTTPHEADER,['Content-Type: application/json','Authorization: Bearer ' . $paymentApiGatewayId]);
+            curl_setopt($handle,CURLOPT_RETURNTRANSFER,true);
+            curl_setopt($handle,CURLOPT_POSTFIELDS,json_encode($paymentApiData));
+            $paymentApiResponse = curl_exec($handle);
+            curl_close($handle);
+
+            $paymentApiResponse = $paymentApiResponse ? json_decode($paymentApiResponse,true) : null;
+            if (!$paymentApiResponse) { throw new Exception; }
+            
+            $validate = isset($paymentApiResponse['status']) && $paymentApiResponse['status'] == 1 && isset($paymentApiResponse['data'])
+                            && $paymentApiResponse['data'];
+            if (!$validate) { throw new Exception; }
+
+            $data = $paymentApiResponse['data'];
+            $validate = isset($data['token']) && isset($data['ref_num']) && isset($data['payment_amount']);
+            if (!$validate) { throw new Exception; }
+
+            $token = $data['token'];
+            $refNum = $data['ref_num'];
+            $paymentAmount = $data['payment_amount'];
+            
+            $order->token = $token;
+            $order->payment_amount = $paymentAmount;
+            $order->ref_num = $refNum;
+            $order->save();
+
+            DB::commit();
+            
+            $redirectUrl = 'https://core.paystar.ir/api/pardakht/payment?token=' . $token;
+            return $this->jsonMessage(true,null,[
+                'redirect_url' => $redirectUrl,
+            ]);
+        }
+        catch (Exception $ex) {
+            DB::rollBack();
+            return $this->jsonMessage(false,'مشکلی پیش آمد. لطفا دوباره تلاش کنید! در صورت تداوم مشکل با پشتیبانی تماس بگیرید.',null);
+        }
+        catch (Throwable $tr) {
+            DB::rollBack();
+            return $this->jsonMessage(false,'مشکلی پیش آمد. لطفا دوباره تلاش کنید! در صورت تداوم مشکل با پشتیبانی تماس بگیرید.',null);
+        }
+    }
+
+    public function callback(Request $request)
+    {
+
     }
 }

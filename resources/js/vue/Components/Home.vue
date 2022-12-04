@@ -4,9 +4,17 @@
 
             <div class="card">
                 <div class="card-body">
-                    <h5 class="mb-3">
-                        <i class="mdi mdi-reply"></i> اقدام برای پرداخت
-                    </h5>
+                    <div class="clearfix mb-3">
+                        <h5 class="float-start">
+                            <i class="mdi mdi-reply"></i> اقدام برای پرداخت
+                        </h5>
+
+                        <div class="float-end">
+                            <div v-show="loading" class="spinner-border" role="status">
+                                <span class="visually-hidden">لطفا صبر کنید ...</span>
+                            </div>
+                        </div>
+                    </div>
 
                     <p class="mb-2">
                         خدمت ارائه شده :
@@ -21,11 +29,13 @@
                     <form @submit.prevent="formSubmit">
                         <div class="mb-3">
                             <label for="cardNumber" class="form-label">شماره کارت</label>
-                            <input v-model="cardNumber" @change="checkValidation" :class="{'form-control': true,'is-invalid': invalidCardNumber}" autofocus type="text" id="cardNumber" maxlength="16" placeholder="شماره کارت خود را وارد کنید ...">
+                            <input :disabled="loading" v-model="cardNumber" @change="checkValidation" :class="{'form-control': true,'is-invalid': invalidCardNumber}" autofocus type="text" id="cardNumber" maxlength="16" placeholder="شماره کارت خود را وارد کنید ...">
                         </div>
 
-                        <button class="btn btn-success w-100" type="submit">
-                            تایید شماره کارت و پرداخت مبلغ
+                        <button :disabled="loading" class="btn btn-success w-100" type="submit">
+                            <span v-show="!loading">تایید شماره کارت و پرداخت مبلغ</span>
+                            <i v-show="loading" class="mdi mdi-cog me-2 mdi-spin"></i>
+                            <span v-show="loading">لطفا صبر کنید ...</span>
                         </button>
                     </form>
                 </div>
@@ -41,6 +51,7 @@ export default {
         return {
             cardNumber: '',
             invalidCardNumber: false,
+            loading: false,
         };
     },
     
@@ -58,7 +69,20 @@ export default {
             }
             else { this.invalidCardNumber = false; }
 
-            
+            this.loading = true;
+            const searchParams = new URLSearchParams({'card_number': this.cardNumber});
+            axios.post('/new-order',searchParams.toString(),{headers: {'Content-Type': 'application/x-www-form-urlencoded'}})
+            .then(response => {
+                this.loading = false;
+                let data = response.data;
+                if (data.ok) {
+                    window.location.href = data.data.redirect_url;
+                }
+                else { alert(data.msg); }
+            }).catch(err => {
+                this.loading = false;
+                alert('مشکلی در هنگام ارتباط با سرور پیش آمد!');
+            });
         },
     },
 };
