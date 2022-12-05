@@ -7,4 +7,5 @@ Route::controller(MainController::class)->group(function () {
     Route::get('/','home')->name('main.home');
     Route::post('/new-order','newOrder');
     Route::post('/callback','callback')->name('main.callback');
+    Route::get('/success','success')->name('main.success');
 });

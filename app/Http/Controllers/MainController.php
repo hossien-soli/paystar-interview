@@ -172,8 +172,8 @@ class MainController extends Controller
             if (!$validate) { throw new Exception; }
 
             DB::commit();
-            
-            return Redirect::route('main.success');
+
+            return Redirect::to(route('main.success') . '?order_id=' . $orderId);
         }
         catch (Exception $ex) {
             DB::rollBack();
@@ -185,5 +185,24 @@ class MainController extends Controller
             Session::flash('swalWarning','پرداخت ناموفق بود. ممکن است که توسط خودتان لغو شده باشد و یا اگر که مبلغی از حساب شما کسر شده است در کمتر از 48 ساعت دیگر به حساب شما بازمیگردد!');
             return Redirect::route('main.home');
         }
+    }
+
+    public function success(Request $request)
+    {
+        $orderId = $request->query('order_id');
+        $validate = $orderId && ctype_digit($orderId);
+        if (!$validate) {
+            Session::flash('swalWarning','سفارش یافت نشد!');
+            return Redirect::route('main.home');
+        }
+
+        $order = Order::query()->find($orderId);
+        if (!$order) {
+            Session::flash('swalWarning','سفارش یافت نشد!');
+            return Redirect::route('main.home');
+        }
+
+        $title = "سفارش موفق";
+        return view('main.success',compact('title','order'));
     }
 }
