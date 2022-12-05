@@ -4,7 +4,7 @@
 
             <div class="card">
                 <div class="card-body">
-                    <div class="clearfix mb-3">
+                    <div class="clearfix mb-2">
                         <h5 class="float-start">
                             <i class="mdi mdi-reply"></i> اقدام برای پرداخت
                         </h5>
@@ -78,10 +78,10 @@ export default {
                 if (data.ok) {
                     window.location.href = data.data.redirect_url;
                 }
-                else { alert(data.msg); }
+                else { swalWarning(data.msg); }
             }).catch(err => {
                 this.loading = false;
-                alert('مشکلی در هنگام ارتباط با سرور پیش آمد!');
+                swalConnectionError();
             });
         },
     },

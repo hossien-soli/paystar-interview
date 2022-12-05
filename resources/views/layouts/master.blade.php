@@ -16,6 +16,20 @@
         @yield('content')
     </div>
 
+    <script>
+        @if(session('swalWarning'))
+        swalWarning("{{ session('swalWarning') }}");
+        @endif
+
+        @if(session('swalError'))
+        swalError("{{ session('swalError') }}");
+        @endif
+
+        @if(session('swalSuccess'))
+        swalSuccess("{{ session('swalSuccess') }}");
+        @endif
+    </script>
+
     @yield('end_links')
 </body>
 </html>

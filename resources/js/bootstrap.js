@@ -12,6 +12,72 @@ window.activeBootstrapTooltips = () => {
 
 activeBootstrapTooltips();
 
+import Swal from 'sweetalert2';
+window.Swal = Swal;
+
+window.swalSuccess = (message) => {
+    return Swal.fire({
+        title: 'عملیات موفق آمیز بود!',
+        html: message,
+        type: 'success',
+        confirmButtonText: 'تایید',
+        confirmButtonClass: 'bg-primary',
+    });
+};
+
+window.swalInfo = (message) => {
+    return Swal.fire({
+        html: '<h4 style="font-size:20px;">' + message + "</h4>",
+        type: 'question',
+        confirmButtonText: 'تایید',
+        confirmButtonClass: 'bg-primary',
+    });
+};
+
+window.swalWarning = (message,withTitle=true) => {
+    if (withTitle) {
+        return Swal.fire({
+            title: 'یک مشکل وجود دارد!',
+            html: message,
+            type: 'warning',
+            confirmButtonText: 'تایید',
+            confirmButtonClass: 'bg-primary',
+        });
+    }
+    else {
+        return Swal.fire({
+            html: '<h4 style="font-size:21px;">' + message + "</h4>",
+            type: 'warning',
+            confirmButtonText: 'تایید',
+            confirmButtonClass: 'bg-primary',
+        });
+    }
+};
+
+window.swalError = (message,withTitle=true) => {
+    if (withTitle) {
+        return Swal.fire({
+            title: 'یک مشکل وجود دارد!',
+            html: message,
+            type: 'error',
+            confirmButtonText: 'تایید',
+            confirmButtonClass: 'bg-primary',
+        });
+    }
+    else {
+        return Swal.fire({
+            html: '<h4 style="font-size:21px;">' + message + "</h4>",
+            type: 'error',
+            confirmButtonText: 'تایید',
+            confirmButtonClass: 'bg-primary',
+        });
+    }
+};
+
+window.swalConnectionError = () => {
+    return swalError("مشکلی در هنگام ارتباط با سرور پیش آمده! لطفا دوباره تلاش کنید. (در صورت تداوم این مشکل یکبار صفحه را بارگزاری مجدد کنید.)",false);
+};
+
 /**
  * Echo exposes an expressive API for subscribing to channels and listening
  * for events that are broadcast by Laravel. Echo and event broadcasting
