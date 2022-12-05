@@ -122,13 +122,23 @@ class MainController extends Controller
             return Redirect::route('main.home');
         }
 
-        $order = Order::query()->where('id',$orderId)->where('ref_num',$refNum)->whereNot('paid',1)->first();
+        $order = Order::query()->where('id',$orderId)->where('ref_num',$refNum)->first();
         if (!$order) {
             Session::flash('swalWarning','پرداخت ناموفق بود. ممکن است که توسط خودتان لغو شده باشد و یا اگر که مبلغی از حساب شما کسر شده است در کمتر از 48 ساعت دیگر به حساب شما بازمیگردد!');
             return Redirect::route('main.home');
         }
 
-        if ($order->card_number != $cardNumber) {
+        $realCardNumber = $order->card_number;
+        $indexes = [0,1,2,3,4,5,12,13,14,15];
+        $sameCardNumbers = true;
+        foreach ($indexes as $index) {
+            if ($cardNumber[$index] != $realCardNumber[$index]) {
+                $sameCardNumbers = false;
+                break;
+            }
+        }
+
+        if (!$sameCardNumbers) {
             Session::flash('swalWarning','پرداخت با شماره کارتی که اعلام کردید انجام نشده. مبلغ کسر شده در کمتر از 48 ساعت دیگر به حساب شما بازمیگردد!');
             return Redirect::route('main.home');
         }
